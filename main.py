@@ -215,7 +215,7 @@ def shortest(stops, src, dest, start_time):
         if arrival_time is None: arrival_time = ""
         if departure_time is None: departure_time = "24:00"
 
-        graph[station_id].append((train_id, arrival_time, departure_time))
+        graph[station_id].append((train_id, arrival_time, departure_time,fare))
         trains[train_id].append((station_id, arrival_time, departure_time))
         
     for station in graph:
@@ -224,7 +224,12 @@ def shortest(stops, src, dest, start_time):
     for train in trains:
         trains[train] = sorted(trains[train], key = cmp_to_key(shortest_arrival_sort))
         trains[train] = [station[0] for station in trains[train]]
+    #1 -> 3 > 4
+    for train in trains:
+        for i in range(len(train) - 1):
+            graph[train[i]].append((train[i+1],graph[train[i]][2],graph[train[i+1]][1],graph[train[i+1]][3]))
     
+     
     current_station = src
     time = start_time
     path = [src]
