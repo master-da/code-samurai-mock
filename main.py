@@ -127,7 +127,64 @@ def get_station(station_id):
         'trains': stops
     }, 200
     
+@app.route('/api/wallets/<wallet_id>', methods=['GET', 'PUT'])
+def get_balance(wallet_id):
     
+    if request.method == 'PUT':
+        data = request.get_json()
+        
+        if data["recharge"] < 100 or data["recharge"] > 10000:
+            return {
+                "message": f"invalid amount: {data["recharge"]}"
+            }, 400
+
+        db = sqlite3.connect('sqlite.db')
+        cursor = db.cursor()
+        cursor.execute('select * from users where user_id = ?', (wallet_id,))
+        user = cursor.fetchall()
+        
+        if len(user) == 0:
+            return {
+                "message": f"wallet with id: {wallet_id} was not found"
+            }, 404
+        
+        user = user[0]
+        cursor.execute('update users set balance = ? where user_id = ?', (user[2] + data["recharge"], wallet_id))
+        db.commit()
+        db.close()
+        
+        return {
+            "wallet_id": wallet_id,
+            "balance": user[2] + data["recharge"],
+            "wallet_user":
+            {
+                "user_id": user[0],
+                "user_name": user[1]
+            }
+        }
+        
+    elif request.method == 'GET':
+        db = sqlite3.connect('sqlite.db')
+        cursor = db.cursor()
+        
+        cursor.execute("select * from users where user_id = ?", (wallet_id,))
+        wallet = cursor.fetchall()
+        db.close()
+        if len(wallet) == 0:
+            return {
+                'message': f"wallet with id: {wallet_id} was not found"
+            }, 404
+            
+        return {
+            "wallet_id": wallet_id,
+            "balance": wallet[0][2],
+            "wallet_user":
+            {
+                "user_id": wallet[0][0],
+                "user_name": wallet[0][1]
+            }
+        }
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000)
