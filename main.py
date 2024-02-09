@@ -1,4 +1,5 @@
 import sqlite3
+from functools import cmp_to_key
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -69,18 +70,64 @@ def create_train():
             "num_stations": len(stops)
         }, 201
     
-    elif request.method == 'GET':
+    # elif request.method == 'GET':
                 
-                db = sqlite3.connect('sqlite.db')
-                cursor = db.cursor()
-                cursor.execute('SELECT * FROM stops')
-                stops = cursor.fetchall()
-                db.close()
+    #             db = sqlite3.connect('sqlite.db')
+    #             cursor = db.cursor()
+    #             cursor.execute('SELECT * FROM stops')
+    #             stops = cursor.fetchall()
+    #             db.close()
                 
-                stops = [{'train_id': stop[0], 'station_id': stop[1], 'arrival_time': stop[2], 'departure_time': stop[3], 'fare': stop[4]} for stop in stops]
+    #             stops = [{'train_id': stop[0], 'station_id': stop[1], 'arrival_time': stop[2], 'departure_time': stop[3], 'fare': stop[4]} for stop in stops]
                 
-                return {'stops': stops}, 200
+    #             return {'stops': stops}, 200
 
+def stop_compare(stop1, stop2):
+    
+    arrival1 = stop1[2]
+    arrival2 = stop2[2]
+    
+    departure1 = stop1[3]
+    departure2 = stop2[3]
+    
+    if arrival1 is None : arrival1 = ""
+    if arrival2 is None : arrival2 = ""
+
+    if departure1 is None : departure1 = ""
+    if departure2 is None : departure2 = ""
+    
+    if departure1 != departure2:
+        return departure1 < departure2
+    elif arrival1 != arrival2:
+        return arrival1 < arrival2
+    elif stop1[0] != stop2[0]:
+        return stop1[0] < stop2[0]
+
+@app.route('/api/stations/<station_id>/trains', methods=['GET'])
+def get_station(station_id):
+    db = sqlite3.connect('sqlite.db')
+    cursor = db.cursor()
+    
+    cursor.execute("select * from stations where station_id = ?", (station_id,))
+    staions = cursor.fetchall()
+    if len(staions) == 0:
+        return {
+            'message': f"station with id: {station_id} was not found"
+        }, 404
+    
+    cursor.execute('SELECT DISTINCT * FROM stops WHERE station_id = ?', (station_id,))
+    stops = cursor.fetchall()
+    db.close()
+    
+    stops = sorted(stops, key = cmp_to_key(stop_compare))
+    stops = [{'train_id': stop[0], 'arrival_time': stop[2], 'departure_time': stop[3]} for stop in stops]
+    
+    return {
+        'station_id': station_id,
+        'trains': stops
+    }, 200
+    
+    
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000)
