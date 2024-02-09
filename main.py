@@ -126,7 +126,7 @@ def get_balance(wallet_id):
         
         if data["recharge"] < 100 or data["recharge"] > 10000:
             return {
-                "message": f"invalid amount: {data["recharge"]}"
+                "message": f"invalid amount: {data['recharge']}"
             }, 400
 
         db = sqlite3.connect('sqlite.db')
