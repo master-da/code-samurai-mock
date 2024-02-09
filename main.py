@@ -300,13 +300,17 @@ def create_ticket():
     cursor.execute("select * from stops")
     stops = cursor.fetchall()
     
-    db.close()
+    cursor.execute("select * from users where user_id = ?", (data['wallet_id'],))
+    user = cursor.fetchall()
     
-    # print("path from", data['station_from'], "to", data['station_to'])
-    # path = find_shortest_path(stops, data['station_from'], data['station_to'])
-    # print(path)
     my_fare = shortest(stops, data['station_from'], data['station_to'], data['time_after'])
     
+    if my_fare > user[0][2]:
+        return {
+            "message": f"recharge amount: {user[0][2] - my_fare} to purchase the thicket"
+        }, 402
+    
+    db.close()
     
     return stops, 200
 
