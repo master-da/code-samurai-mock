@@ -2,7 +2,7 @@ import sqlite3
 from collections import defaultdict
 from functools import cmp_to_key
 from flask import Flask, request
-
+from queue import PriorityQueue
 app = Flask(__name__)
 
 @app.route('/api/users', methods=['POST'])
@@ -228,39 +228,65 @@ def shortest(stops, src, dest, start_time):
         
     
     #1 -> 3 > 4
-    print(trains)
-    for balls in trains:
-        train = trains[balls]
+    # print(trains)
+    for train_no in trains:
+        train = trains[train_no]
 
-        print("train", train)
+        # print("train", train)
         
         for i in range(len(train) - 1):
             if train[i] not in graph2:
                 graph2[train[i]] = []
             
             print("train no", train[i], "pspsps", train[i+1])
-            print(graph)
+            # print(graph)
             
             """
                 station train[i]
                 station train[i+1]
-                trainno balls
+                trainno train_no
             """
             
-            arrive, depart, far = "", ""
-            for tp in graph[train[i]]:
-                tren, arriv, dep, f = tp
-                if tren == balls:
-                    arrive, depart, far = arriv, dep, f
-                
+            # arrive, depart, far = "", ""
+            # for tp in graph[train[i]]:
+            #     tren, arriv, dep, f = tp
+            #     if tren == train_no:
+            #         arrive, depart, far = arriv, dep, f
             
-            graph2[train[i]].append((   train[i+1],     graph[train[i]][2],     graph[train[i+1]][1],       graph[train[i+1]][3]))
+            # i_depart, i_1_arrival, i_1_fare = "", "", 0
+            
+            for tp in graph[train[i]]:
+                if tp[0] == train_no:
+                    i_depart = tp[2]
+            for tp in graph[train[i+1]]:
+                if tp[0] == train_no:
+                    i_1_arrival = tp[1]
+                    i_1_fare = tp[3]
+            
+            graph2[train[i]].append((   train[i+1],     i_depart,     i_1_arrival,       i_1_fare))
+            
+            
     
-    print("graph", graph2)
-    current_station = src
-    time = start_time
-    path = [src]
-    graph[current_station]
+    print("graph_____________________-2", graph2)
+
+    pq = PriorityQueue()
+    dist = {station: (float('inf'), '') for station in graph2}
+    dist[src] = (0, start_time)
+
+    pq.put((0, src, start_time))
+
+    while not pq.empty():
+        d, station, arrival_time = pq.get()
+
+        if station == dest:
+            return d
+
+        for next_station, departure_time, next_arrival_time, fare in graph2[station]:
+            if departure_time > arrival_time and d + fare < dist[next_station][0]:
+                dist[next_station] = (d + fare, next_arrival_time)
+                pq.put((d + fare, next_station, next_arrival_time))
+
+    return dist[dest]
     
         
 
@@ -279,7 +305,8 @@ def create_ticket():
     # print("path from", data['station_from'], "to", data['station_to'])
     # path = find_shortest_path(stops, data['station_from'], data['station_to'])
     # print(path)
-    shortest(stops, data['station_from'], data['station_to'], data['time_after'])
+    my_fare = shortest(stops, data['station_from'], data['station_to'], data['time_after'])
+    
     
     return stops, 200
 
