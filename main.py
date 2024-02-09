@@ -263,31 +263,31 @@ def shortest(stops, src, dest, start_time):
                     i_1_arrival = tp[1]
                     i_1_fare = tp[3]
             
-            graph2[train[i]].append((   train[i+1],     i_depart,     i_1_arrival,       i_1_fare))
+            graph2[train[i]].append((   train[i+1],     i_depart,     i_1_arrival,       i_1_fare, train_no))
             
             
     
     print("graph_____________________-2", graph2)
 
     pq = PriorityQueue()
-    dist = {station: (float('inf'), '') for station in graph2}
-    dist[src] = (0, start_time)
+    dist = {station: (float('inf'), '', []) for station in graph2}
+    dist[src] = (0, start_time, [])
 
-    pq.put((0, src, start_time))
+    pq.put((0, src, start_time, []))
 
     while not pq.empty():
-        d, station, arrival_time = pq.get()
+        d, station, arrival_time, path = pq.get()
 
         if station == dest:
-            return d
+            return d, [{'station_id': station, 'train_id': train_id, 'departure_time': departure_time, 'arrival_time': arrival_time} for station, train_id, departure_time, arrival_time in path]
 
-        for next_station, departure_time, next_arrival_time, fare in graph2[station]:
+        for next_station, departure_time, next_arrival_time, fare, train_id in graph2[station]:
             if departure_time > arrival_time and d + fare < dist[next_station][0]:
-                dist[next_station] = (d + fare, next_arrival_time)
-                pq.put((d + fare, next_station, next_arrival_time))
-
+                new_path = path + [(station, train_id, departure_time, arrival_time)]
+                dist[next_station] = (d + fare, next_arrival_time, new_path)
+                pq.put((d + fare, next_station, next_arrival_time, new_path))
+    print("........................",dist[dest])
     return dist[dest]
-    
         
 
 @app.route('/api/tickets', methods=['POST'])
@@ -303,8 +303,9 @@ def create_ticket():
     cursor.execute("select * from users where user_id = ?", (data['wallet_id'],))
     user = cursor.fetchall()
     
-    my_fare = shortest(stops, data['station_from'], data['station_to'], data['time_after'])
-    
+    my_fare,path = shortest(stops, data['station_from'], data['station_to'], data['time_after'])
+    print("_____________________________")
+    print(my_fare,path)
     if my_fare > user[0][2]:
         return {
             "message": f"recharge amount: {user[0][2] - my_fare} to purchase the thicket"
