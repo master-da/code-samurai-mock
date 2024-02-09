@@ -16,24 +16,18 @@ create table stations (
     latitude FLOAT not null
 );
 
-
 create table trains (
     train_id INTEGER primary key,
     train_name VARCHAR(255) not null,
-    capacity INTEGER not null,
-    
+    capacity INTEGER not null
 );
-
 
 create table stops(
-    station_id INTEGER foreign key references stations(station_id),
-    arrival_time varchar(255) not null,
-    departure_time varchar(255) not null,
+    train_id INTEGER,
+    station_id INTEGER,
+    arrival_time varchar(255),
+    departure_time varchar(255),
     fare INTEGER not null,
-);
-
-create table train_stop_map(
-    train_id INTEGER foreign key references trains(train_id),
-    station_id INTEGER foreign key references stations(station_id),
-    primary key(train_id, station_id)
+    foreign key (train_id) references trains(train_id)
+    foreign key (station_id) references stations(station_id)
 );
