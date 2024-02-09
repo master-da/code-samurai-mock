@@ -1,4 +1,5 @@
 import sqlite3
+from collections import defaultdict
 from functools import cmp_to_key
 from flask import Flask, request
 
@@ -69,18 +70,8 @@ def create_train():
             "service_ends": stops[-1]['arrival_time'], 
             "num_stations": len(stops)
         }, 201
-    
-    # elif request.method == 'GET':
-                
-    #             db = sqlite3.connect('sqlite.db')
-    #             cursor = db.cursor()
-    #             cursor.execute('SELECT * FROM stops')
-    #             stops = cursor.fetchall()
-    #             db.close()
-                
-    #             stops = [{'train_id': stop[0], 'station_id': stop[1], 'arrival_time': stop[2], 'departure_time': stop[3], 'fare': stop[4]} for stop in stops]
-                
-    #             return {'stops': stops}, 200
+
+
 
 def stop_compare(stop1, stop2):
     
@@ -185,13 +176,37 @@ def get_balance(wallet_id):
             }
         }
 
-def optimalRoute(jsonData):
-    pass
+def find_shortest_path(stops, start_station, end_station):
+    graph = defaultdict(list)
+    for stop in stops:
+        train_id, station_id, arrival_time, departure_time, fare = stop
+
+        if arrival_time is None: arrival_time = ""
+        if departure_time is None: departure_time = "24:00"
+
+        graph[station_id].append((train_id, arrival_time, departure_time))
+
+    queue = [(start_station, [])]
+    visited = set()
+
+    while queue:
+        current_station, path = queue.pop(0)
+        if current_station == end_station:
+            return path + [current_station]
+        visited.add(current_station)
+
+        for train_id, arrival_time, departure_time in graph[current_station]:
+            for next_train_id, next_arrival_time, next_departure_time in graph[current_station]:
+                if next_train_id == train_id and next_arrival_time < arrival_time:
+                    next_station = next_arrival_time[0]
+                    if next_station not in visited:
+                        queue.append((next_station, path + [current_station]))
+    return None
 
 @app.route('/api/tickets', methods=['POST'])
 def create_ticket():
     
-    # data = request.get_json()
+    data = request.get_json()
     db = sqlite3.connect('sqlite.db')
     cursor = db.cursor()
 
@@ -199,10 +214,10 @@ def create_ticket():
     stops = cursor.fetchall()
     
     db.close()
-
-    stops = [{'train_id': stop[0], 'station_id': stop[1], 'arrival_time': stop[2], 'departure_time': stop[3], 'fare': stop[4]} for stop in stops]
     
-    
+    print("path from", data['station_from'], "to", data['station_to'])
+    path = find_shortest_path(stops, data['station_from'], data['station_to'])
+    print(path)
     
     return stops, 200
 
