@@ -43,28 +43,43 @@ def create_station():
     
             return {'stations': stations}, 200
 
-@app.route('/api/trains', methods=['POST'])
+@app.route('/api/trains', methods=['GET', 'POST'])
 def create_train():
 
-    data = request.get_json()
-    stops = data['stops']
+    if request.method == 'POST':
+        data = request.get_json()
+        stops = data['stops']
 
-    db = sqlite3.connect('sqlite.db')
-    cursor = db.cursor()
-    cursor.execute('INSERT INTO trains (train_id, train_name, capacity) VALUES (?, ?, ?)', (data['train_id'], data['train_name'], data['capacity']))
+        db = sqlite3.connect('sqlite.db')
+        cursor = db.cursor()
+        cursor.execute('INSERT INTO trains (train_id, train_name, capacity) VALUES (?, ?, ?)', (data['train_id'], data['train_name'], data['capacity']))
+        
+        for stop in stops:
+            print(data['train_id'], stop['station_id'], stop['arrival_time'], stop['departure_time'], stop['fare'])
+            cursor.execute('INSERT INTO stops (train_id, station_id, arrival_time, departure_time, fare) VALUES (?, ?, ?, ?, ?)', (data['train_id'], stop['station_id'], stop['arrival_time'], stop['departure_time'], stop['fare']))
+
+        db.commit()
+        db.close()
+        return {
+            "train_id": data['train_id'], 
+            "train_name": data['train_name'], 
+            "capacity": data['capacity'], 
+            "service_start": stops[0]['departure_time'], 
+            "service_ends": stops[-1]['arrival_time'], 
+            "num_stations": len(stops)
+        }, 201
     
-    for stop in stops:
-        print(data['train_id'], stop['station_id'], stop['arrival_time'], stop['departure_time'], stop['fare'])
-        cursor.execute('INSERT INTO stops (train_id, station_id, arrival_time, departure_time, fare) VALUES (?, ?, ?, ?, ?)', (data['train_id'], stop['station_id'], stop['arrival_time'], stop['departure_time'], stop['fare']))
-
-    return {
-        "train_id": data['train_id'], 
-        "train_name": data['train_name'], 
-        "capacity": data['capacity'], 
-        "service_start": stops[0]['departure_time'], 
-        "service_ends": stops[-1]['arrival_time'], 
-        "num_stations": len(stops)
-    }, 201
+    elif request.method == 'GET':
+                
+                db = sqlite3.connect('sqlite.db')
+                cursor = db.cursor()
+                cursor.execute('SELECT * FROM stops')
+                stops = cursor.fetchall()
+                db.close()
+                
+                stops = [{'train_id': stop[0], 'station_id': stop[1], 'arrival_time': stop[2], 'departure_time': stop[3], 'fare': stop[4]} for stop in stops]
+                
+                return {'stops': stops}, 200
 
 
 if __name__ == '__main__':
