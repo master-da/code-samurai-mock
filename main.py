@@ -208,6 +208,7 @@ def shortest_arrival_sort(stop1, stop2):
 
 def shortest(stops, src, dest, start_time):
     graph = defaultdict(list)
+    graph2 = defaultdict(list)
     trains = defaultdict(list)
     for stop in stops:
         train_id, station_id, arrival_time, departure_time, fare = stop
@@ -224,12 +225,38 @@ def shortest(stops, src, dest, start_time):
     for train in trains:
         trains[train] = sorted(trains[train], key = cmp_to_key(shortest_arrival_sort))
         trains[train] = [station[0] for station in trains[train]]
-    #1 -> 3 > 4
-    for train in trains:
-        for i in range(len(train) - 1):
-            graph[train[i]].append((train[i+1],graph[train[i]][2],graph[train[i+1]][1],graph[train[i+1]][3]))
+        
     
-     
+    #1 -> 3 > 4
+    print(trains)
+    for balls in trains:
+        train = trains[balls]
+
+        print("train", train)
+        
+        for i in range(len(train) - 1):
+            if train[i] not in graph2:
+                graph2[train[i]] = []
+            
+            print("train no", train[i], "pspsps", train[i+1])
+            print(graph)
+            
+            """
+                station train[i]
+                station train[i+1]
+                trainno balls
+            """
+            
+            arrive, depart, far = "", ""
+            for tp in graph[train[i]]:
+                tren, arriv, dep, f = tp
+                if tren == balls:
+                    arrive, depart, far = arriv, dep, f
+                
+            
+            graph2[train[i]].append((   train[i+1],     graph[train[i]][2],     graph[train[i+1]][1],       graph[train[i+1]][3]))
+    
+    print("graph", graph2)
     current_station = src
     time = start_time
     path = [src]
@@ -252,7 +279,7 @@ def create_ticket():
     # print("path from", data['station_from'], "to", data['station_to'])
     # path = find_shortest_path(stops, data['station_from'], data['station_to'])
     # print(path)
-    shortest(stops)
+    shortest(stops, data['station_from'], data['station_to'], data['time_after'])
     
     return stops, 200
 
