@@ -203,6 +203,35 @@ def find_shortest_path(stops, start_station, end_station):
                         queue.append((next_station, path + [current_station]))
     return None
 
+def shortest_arrival_sort(stop1, stop2):
+    return stop1[1] < stop2[1]
+
+def shortest(stops, src, dest, start_time):
+    graph = defaultdict(list)
+    trains = defaultdict(list)
+    for stop in stops:
+        train_id, station_id, arrival_time, departure_time, fare = stop
+        
+        if arrival_time is None: arrival_time = ""
+        if departure_time is None: departure_time = "24:00"
+
+        graph[station_id].append((train_id, arrival_time, departure_time))
+        trains[train_id].append((station_id, arrival_time, departure_time))
+        
+    for station in graph:
+        graph[station] = sorted(graph[station], key = cmp_to_key(shortest_arrival_sort))
+
+    for train in trains:
+        trains[train] = sorted(trains[train], key = cmp_to_key(shortest_arrival_sort))
+        trains[train] = [station[0] for station in trains[train]]
+    
+    current_station = src
+    time = start_time
+    path = [src]
+    graph[current_station]
+    
+        
+
 @app.route('/api/tickets', methods=['POST'])
 def create_ticket():
     
@@ -215,9 +244,10 @@ def create_ticket():
     
     db.close()
     
-    print("path from", data['station_from'], "to", data['station_to'])
-    path = find_shortest_path(stops, data['station_from'], data['station_to'])
-    print(path)
+    # print("path from", data['station_from'], "to", data['station_to'])
+    # path = find_shortest_path(stops, data['station_from'], data['station_to'])
+    # print(path)
+    shortest(stops)
     
     return stops, 200
 
