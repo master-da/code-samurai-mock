@@ -16,18 +16,32 @@ def create_user():
 
     return data, 201
 
-@app.route('/api/stations', methods=['POST'])
+@app.route('/api/stations', methods=['GET', 'POST'])
 def create_station():
 
-    data = request.get_json()
+    if request.method == 'POST':
 
-    db = sqlite3.connect('sqlite.db')
-    cursor = db.cursor()
-    cursor.execute('INSERT INTO stations (station_id, station_name, longitude, latitude) VALUES (?, ?, ?, ?)', (data['station_id'], data['station_name'], data['longitude'], data['latitude']))
-    db.commit()
-    db.close()
+        data = request.get_json()
 
-    return data, 201
+        db = sqlite3.connect('sqlite.db')
+        cursor = db.cursor()
+        cursor.execute('INSERT INTO stations (station_id, station_name, longitude, latitude) VALUES (?, ?, ?, ?)', (data['station_id'], data['station_name'], data['longitude'], data['latitude']))
+        db.commit()
+        db.close()
+
+        return data, 201
+    
+    elif request.method == 'GET':
+            
+            db = sqlite3.connect('sqlite.db')
+            cursor = db.cursor()
+            cursor.execute('SELECT * FROM stations')
+            stations = cursor.fetchall()
+            db.close()
+
+            stations = [{'station_id': station[0], 'station_name': station[1], 'longitude': station[2], 'latitude': station[3]} for station in stations]
+    
+            return {'stations': stations}, 200
 
 
 if __name__ == '__main__':
