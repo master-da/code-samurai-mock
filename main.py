@@ -43,6 +43,29 @@ def create_station():
     
             return {'stations': stations}, 200
 
+@app.route('/api/trains', methods=['POST'])
+def create_train():
+
+    data = request.get_json()
+    stops = data['stops']
+
+    db = sqlite3.connect('sqlite.db')
+    cursor = db.cursor()
+    cursor.execute('INSERT INTO trains (train_id, train_name, capacity) VALUES (?, ?, ?)', (data['train_id'], data['train_name'], data['capacity']))
+    
+    for stop in stops:
+        print(data['train_id'], stop['station_id'], stop['arrival_time'], stop['departure_time'], stop['fare'])
+        cursor.execute('INSERT INTO stops (train_id, station_id, arrival_time, departure_time, fare) VALUES (?, ?, ?, ?, ?)', (data['train_id'], stop['station_id'], stop['arrival_time'], stop['departure_time'], stop['fare']))
+
+    return {
+        "train_id": data['train_id'], 
+        "train_name": data['train_name'], 
+        "capacity": data['capacity'], 
+        "service_start": stops[0]['departure_time'], 
+        "service_ends": stops[-1]['arrival_time'], 
+        "num_stations": len(stops)
+    }, 201
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000)
