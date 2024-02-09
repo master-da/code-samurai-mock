@@ -185,6 +185,27 @@ def get_balance(wallet_id):
             }
         }
 
+def optimalRoute(jsonData):
+    pass
+
+@app.route('/api/tickets', methods=['POST'])
+def create_ticket():
+    
+    # data = request.get_json()
+    db = sqlite3.connect('sqlite.db')
+    cursor = db.cursor()
+
+    cursor.execute("select * from stops")
+    stops = cursor.fetchall()
+    
+    db.close()
+
+    stops = [{'train_id': stop[0], 'station_id': stop[1], 'arrival_time': stop[2], 'departure_time': stop[3], 'fare': stop[4]} for stop in stops]
+    
+    
+    
+    return stops, 200
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000)
